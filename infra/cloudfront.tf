@@ -61,5 +61,9 @@ locals {
   # Falls back to plain-HTTP ALB when CloudFront is disabled. Google OAuth
   # will refuse a non-HTTPS redirect URI, so sign-in only works once
   # enable_cloudfront = true.
-  public_url = var.enable_cloudfront ? "https://${aws_cloudfront_distribution.main[0].domain_name}" : "http://${aws_lb.main.dns_name}"
+  public_url = (
+    var.public_url_override != "" ? var.public_url_override :
+    var.enable_cloudfront ? "https://${aws_cloudfront_distribution.main[0].domain_name}" :
+    "http://${aws_lb.main.dns_name}"
+  )
 }

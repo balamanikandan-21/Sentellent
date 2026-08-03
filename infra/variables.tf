@@ -88,3 +88,14 @@ variable "enable_cloudfront" {
   type        = bool
   default     = false
 }
+
+variable "public_url_override" {
+  description = <<-EOT
+    Public HTTPS origin users hit, when it is not CloudFront. Set this when the
+    frontend is hosted externally (e.g. Vercel) and proxies /api/* back to the
+    ALB. It drives CORS_ORIGINS, FRONTEND_URL and GOOGLE_REDIRECT_URI on the
+    backend task. Leave empty to use CloudFront (or the raw ALB) instead.
+  EOT
+  type        = string
+  default     = ""
+}
