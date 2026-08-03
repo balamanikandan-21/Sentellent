@@ -13,7 +13,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "sentellent-terraform-state"
+    bucket         = "sentellent-terraform-state-145908329001"
     key            = "production/terraform.tfstate"
     region         = "ap-south-1"
     dynamodb_table = "sentellent-terraform-locks"

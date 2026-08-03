@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "sentellent-terraform-state"
+  bucket = "sentellent-terraform-state-145908329001"
 
   lifecycle {
     prevent_destroy = true

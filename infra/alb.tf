@@ -9,7 +9,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "backend" {
-  name        = "${local.name_prefix}-backend-tg"
+  name        = "${var.project_name}-prod-be"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -32,7 +32,7 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name        = "${local.name_prefix}-frontend-tg"
+  name        = "${var.project_name}-prod-fe"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
