@@ -1,7 +1,7 @@
 variable "github_repo" {
   description = "GitHub repository in format owner/repo"
   type        = string
-  default     = "balamanikandan231/sentellent"
+  default     = "balamanikandan-21/Sentellent"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
