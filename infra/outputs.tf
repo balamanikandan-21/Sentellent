@@ -1,6 +1,6 @@
 output "app_url" {
   description = "Public HTTPS URL (CloudFront) — use this for Google OAuth redirect URIs"
-  value       = "https://${aws_cloudfront_distribution.main.domain_name}"
+  value       = local.public_url
 }
 
 output "alb_dns_name" {

@@ -3,6 +3,7 @@
 # URIs, so the app must be served over HTTPS.
 
 resource "aws_cloudfront_distribution" "main" {
+  count           = var.enable_cloudfront ? 1 : 0
   enabled         = true
   is_ipv6_enabled = true
   comment         = "${local.name_prefix} — HTTPS entry point"
@@ -57,5 +58,8 @@ resource "aws_cloudfront_distribution" "main" {
 }
 
 locals {
-  public_url = "https://${aws_cloudfront_distribution.main.domain_name}"
+  # Falls back to plain-HTTP ALB when CloudFront is disabled. Google OAuth
+  # will refuse a non-HTTPS redirect URI, so sign-in only works once
+  # enable_cloudfront = true.
+  public_url = var.enable_cloudfront ? "https://${aws_cloudfront_distribution.main[0].domain_name}" : "http://${aws_lb.main.dns_name}"
 }

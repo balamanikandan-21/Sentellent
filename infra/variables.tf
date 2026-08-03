@@ -76,3 +76,15 @@ variable "domain_name" {
   type        = string
   default     = ""
 }
+
+variable "enable_cloudfront" {
+  description = <<-EOT
+    Create the CloudFront distribution that fronts the ALB with HTTPS.
+    New AWS accounts must be verified by AWS Support before they may create
+    distributions; until then set this to false so the rest of the stack can
+    deploy. Google OAuth requires an HTTPS redirect URI, so this must be true
+    for production sign-in to work.
+  EOT
+  type        = bool
+  default     = false
+}

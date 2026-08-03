@@ -58,7 +58,8 @@ resource "aws_db_instance" "main" {
   auto_minor_version_upgrade = true
 
   allocated_storage     = 20
-  max_allocated_storage = 100
+  # Free tier caps storage at 20GB; autoscaling beyond it would bill.
+  max_allocated_storage = 20
   storage_type          = "gp3"
   storage_encrypted     = true
 
@@ -73,8 +74,9 @@ resource "aws_db_instance" "main" {
   publicly_accessible = false
   skip_final_snapshot = true
 
-  backup_retention_period = 7
-  backup_window           = "03:00-04:00"
+  # Free-tier accounts reject a retention period > 0 (FreeTierRestrictionError).
+  # Raise this to 7 once the account is upgraded off free tier.
+  backup_retention_period = 0
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
   performance_insights_enabled = false
