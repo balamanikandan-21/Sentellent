@@ -11,7 +11,7 @@ import structlog
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.ingestion.config import RSS_FEEDS
+from app.ingestion.config import RSS_FEEDS, ticker_news_feeds
 
 logger = structlog.get_logger()
 
@@ -106,9 +106,14 @@ async def _try_fetch_full_article(url: str) -> str | None:
 
 
 async def fetch_news(
-    symbol: str, *, max_articles: int = 50
+    symbol: str, *, max_articles: int = 50, company_name: str | None = None
 ) -> list[RawArticle]:
-    feed_configs = RSS_FEEDS.get(symbol, RSS_FEEDS["_default"])
+    # Ticker-specific news first (Google News search), then broad market feeds
+    # for context. Without the former the corpus has almost no coverage of the
+    # followed stock and retrieval confidence stays below threshold.
+    feed_configs = ticker_news_feeds(symbol, company_name) + RSS_FEEDS.get(
+        symbol, RSS_FEEDS["_default"]
+    )
     logger.info("fetching_news", symbol=symbol, feed_count=len(feed_configs))
 
     tasks = [

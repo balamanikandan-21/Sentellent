@@ -171,11 +171,11 @@ class RecommendationEngine:
             persona=persona_text,
         )
 
+        # `temperature` is rejected by Claude Sonnet 5 — see agent/nodes/analysis.py.
         llm = ChatAnthropic(
             model=self.settings.PRIMARY_MODEL,
             api_key=self.settings.ANTHROPIC_API_KEY,
             max_tokens=self.settings.LLM_MAX_TOKENS,
-            temperature=0.2,
         )
 
         response = await llm.ainvoke([

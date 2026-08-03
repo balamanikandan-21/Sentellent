@@ -88,11 +88,12 @@ async def stock_analysis(state: AgentState) -> AgentState:
             "confidence_score": confidence,
         }
 
+    # NOTE: `temperature` is rejected by Claude Sonnet 5 (400
+    # invalid_request_error). Only the Haiku tagging calls still pass it.
     llm = ChatAnthropic(
         model=settings.PRIMARY_MODEL,
         api_key=settings.ANTHROPIC_API_KEY,
         max_tokens=settings.LLM_MAX_TOKENS,
-        temperature=settings.LLM_TEMPERATURE,
     )
 
     query_type = state.get("query_type", "research")

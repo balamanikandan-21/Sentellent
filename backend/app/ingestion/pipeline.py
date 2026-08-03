@@ -164,8 +164,11 @@ async def _process_article(
     meta = extract_article_metadata(raw.title, raw.content, raw.source)
     meta.update(raw.meta)
 
+    # Only link tickers the article actually mentions. Previously the followed
+    # symbol was added unconditionally, so every general market article was
+    # tagged as (e.g.) a TCS article — which poisoned ticker-filtered retrieval
+    # and dragged confidence below the anti-hallucination threshold.
     detected_tickers = extract_tickers(raw.title + " " + raw.content, known_symbols)
-    detected_tickers.add(symbol)
 
     article = await article_repo.create(
         url=raw.url,
@@ -267,7 +270,9 @@ async def _run_ingestion_locked(db: AsyncSession, symbol: str, log) -> dict:
 
         log.info("fetching_news")
         raw_articles = await fetch_news(
-            symbol, max_articles=settings.MAX_ARTICLES_PER_FEED
+            symbol,
+            max_articles=settings.MAX_ARTICLES_PER_FEED,
+            company_name=info.get("company_name"),
         )
 
         all_ticker_result = await db.execute(select(Ticker.symbol))

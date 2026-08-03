@@ -43,11 +43,11 @@ async def generate_response(state: AgentState) -> AgentState:
         }
 
     settings = get_settings()
+    # `temperature` is rejected by Claude Sonnet 5 — see analysis.py.
     llm = ChatAnthropic(
         model=settings.PRIMARY_MODEL,
         api_key=settings.ANTHROPIC_API_KEY,
         max_tokens=settings.LLM_MAX_TOKENS,
-        temperature=settings.LLM_TEMPERATURE,
     )
 
     citations_text = "\n".join(

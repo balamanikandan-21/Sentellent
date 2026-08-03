@@ -134,12 +134,12 @@ class RAGRetriever:
                     a.published_at,
                     a.sentiment,
                     a.metadata->>'category' AS category,
-                    1 - (ac.embedding <=> :embedding::vector) AS vector_sim
+                    1 - (ac.embedding <=> CAST(:embedding AS vector)) AS vector_sim
                 FROM article_chunks ac
                 JOIN articles a ON a.id = ac.article_id
                 {ticker_join}
                 {where_sql}
-                ORDER BY ac.embedding <=> :embedding::vector
+                ORDER BY ac.embedding <=> CAST(:embedding AS vector)
                 LIMIT :candidate_k
             ),
             keyword_search AS (
