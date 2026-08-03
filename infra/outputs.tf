@@ -24,11 +24,6 @@ output "rds_endpoint" {
   sensitive   = true
 }
 
-output "redis_endpoint" {
-  description = "ElastiCache Redis endpoint"
-  value       = aws_elasticache_cluster.redis.cache_nodes[0].address
-  sensitive   = true
-}
 
 output "ecs_cluster_name" {
   description = "ECS cluster name"

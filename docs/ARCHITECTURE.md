@@ -10,13 +10,13 @@ flowchart TB
     subgraph VPC[VPC 10.0.0.0/16 — 2 AZs]
         subgraph Public[Public subnets]
             ALB[Application Load Balancer<br/>path routing]
-            NAT[NAT Gateway]
         end
-        subgraph Private[Private subnets]
+        subgraph PublicApps[Public subnets — app tasks]
             FE[Next.js 15<br/>ECS Fargate 256/512]
             BE[FastAPI<br/>ECS Fargate 512/1024, 2 workers]
+        end
+        subgraph Private[Private subnets — data only]
             RDS[(RDS PostgreSQL 16<br/>+ pgvector HNSW)]
-            RED[(ElastiCache Redis 7)]
         end
     end
     SCHED[EventBridge Scheduler<br/>nightly 02:00 IST] -->|run-task| BE2[One-off refresh task]
@@ -24,7 +24,6 @@ flowchart TB
     ALB -->|"/"| FE
     ALB -->|"/api/* , /health"| BE
     BE --> RDS
-    BE --> RED
     BE2 --> RDS
     BE -.-> LLM[Anthropic Claude<br/>Sonnet 5 + Haiku 4.5]
     BE -.-> EMB[OpenAI Embeddings<br/>text-embedding-3-small]
@@ -113,6 +112,6 @@ Migrations: Alembic (4 revisions), UUID v7 keys, soft-delete on users.
 
 - OAuth CSRF `state` verification; JWT in httpOnly/SameSite=Lax cookies; refresh rotation with server-side SHA-256 hashed tokens + revocation.
 - Secrets only in AWS Secrets Manager (incl. full `DATABASE_URL`) — task definitions carry ARNs, not values.
-- RDS/Redis in private subnets, security groups chained ALB→ECS→data stores; no public DB access.
+- RDS in private subnets with no egress route; ECS tasks run in public subnets (no NAT Gateway) but accept inbound traffic only from the ALB security group. No public DB access.
 - GitHub Actions authenticates via OIDC — no long-lived AWS keys in CI.
 - SSE errors return generic messages; details stay in CloudWatch logs.

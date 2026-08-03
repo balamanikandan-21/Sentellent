@@ -98,7 +98,24 @@ EventBridge Scheduler `sentellent-production-news-refresh` runs nightly at 02:00
 
 ## Costs (approx, ap-south-1)
 
-db.t3.micro (~$15/mo) + cache.t3.micro (~$12/mo) + 2 small Fargate tasks (~$25/mo) + ALB (~$20/mo) + NAT (~$35/mo) ≈ **$100–110/mo**. Tear down with `terraform destroy` after evaluation.
+The stack is deliberately cost-optimized for a demo/evaluation deployment:
+
+| Component | Cost | Note |
+|---|---|---|
+| RDS db.t3.micro | ~$15/mo | Free-tier eligible for 12 months on new accounts |
+| 2× small Fargate tasks | ~$25/mo | 0.25–0.5 vCPU each |
+| ALB | ~$20/mo | Partially free-tier eligible |
+| CloudFront | ~$0 | Pay-per-request; negligible at demo traffic |
+| Secrets Manager | ~$2/mo | 5 secrets |
+| **Total** | **~$60/mo** | ≈ $2/day |
+
+**Deliberately omitted to save cost:**
+- **NAT Gateway** (~$32/mo, never free-tier) — ECS tasks run in public subnets with public IPs instead. Inbound is still restricted to the ALB security group; RDS stays private.
+- **ElastiCache** (~$12/mo) — Redis is registered as an injectable dependency but no route uses it, and the client connects lazily, so its absence is a no-op.
+
+New AWS accounts can earn up to $100 in credits via the Console's "Explore AWS" activities, which covers this comfortably.
+
+> **Tear down when evaluation is finished:** `cd infra && terraform destroy`. Set an AWS Budgets alert first — it takes two minutes and is itself one of the credit-earning activities.
 
 ## Submission checklist (challenge)
 

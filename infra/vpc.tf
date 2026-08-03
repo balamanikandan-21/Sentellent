@@ -34,17 +34,11 @@ resource "aws_subnet" "private" {
   tags = { Name = "${local.name_prefix}-private-${count.index}" }
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-  tags   = { Name = "${local.name_prefix}-nat-eip" }
-}
-
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
-
-  tags = { Name = "${local.name_prefix}-nat" }
-}
+# NOTE: No NAT Gateway. It is the single most expensive component in this
+# stack (~$32/mo + data processing) and is not free-tier eligible. Instead the
+# ECS tasks run in the public subnets with public IPs so they can reach the
+# Anthropic/OpenAI APIs and RSS feeds directly through the Internet Gateway.
+# RDS stays in the private subnets, reachable only from the ECS security group.
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -57,13 +51,10 @@ resource "aws_route_table" "public" {
   tags = { Name = "${local.name_prefix}-public-rt" }
 }
 
+# Private subnets have no egress route — they only host RDS, which never
+# needs outbound internet access.
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
 
   tags = { Name = "${local.name_prefix}-private-rt" }
 }

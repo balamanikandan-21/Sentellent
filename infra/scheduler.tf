@@ -66,9 +66,11 @@ resource "aws_scheduler_schedule" "news_refresh" {
       task_count          = 1
 
       network_configuration {
-        subnets          = aws_subnet.private[*].id
+        # Public subnet + public IP: the refresh job needs outbound internet
+        # (RSS feeds, yfinance, OpenAI) and there is no NAT Gateway.
+        subnets          = aws_subnet.public[*].id
         security_groups  = [aws_security_group.ecs.id]
-        assign_public_ip = false
+        assign_public_ip = true
       }
     }
 

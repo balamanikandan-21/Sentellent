@@ -41,7 +41,6 @@ resource "aws_ecs_task_definition" "backend" {
     environment = [
       { name = "ENVIRONMENT", value = "production" },
       { name = "DEBUG", value = "false" },
-      { name = "REDIS_URL", value = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:6379/0" },
       { name = "CORS_ORIGINS", value = "[\"${local.public_url}\"]" },
       { name = "FRONTEND_URL", value = local.public_url },
       { name = "GOOGLE_REDIRECT_URI", value = "${local.public_url}/api/v1/auth/google/callback" },
@@ -130,9 +129,12 @@ resource "aws_ecs_service" "backend" {
   health_check_grace_period_seconds  = 60
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    # Public subnets + public IP replaces the NAT Gateway for outbound
+    # internet (LLM APIs, RSS feeds). Inbound is still restricted to the ALB
+    # security group only.
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -161,9 +163,12 @@ resource "aws_ecs_service" "frontend" {
   health_check_grace_period_seconds  = 60
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    # Public subnets + public IP replaces the NAT Gateway for outbound
+    # internet (LLM APIs, RSS feeds). Inbound is still restricted to the ALB
+    # security group only.
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {

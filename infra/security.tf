@@ -67,18 +67,3 @@ resource "aws_security_group" "rds" {
   lifecycle { create_before_destroy = true }
 }
 
-resource "aws_security_group" "redis" {
-  name_prefix = "${local.name_prefix}-redis-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 6379
-    to_port         = 6379
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
-  }
-
-  tags = { Name = "${local.name_prefix}-redis-sg" }
-
-  lifecycle { create_before_destroy = true }
-}
