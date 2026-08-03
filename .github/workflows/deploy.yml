@@ -1,0 +1,232 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_BACKEND: sentellent-production-backend
+  ECR_FRONTEND: sentellent-production-frontend
+  ECS_CLUSTER: sentellent-production-cluster
+  ECS_BACKEND_SERVICE: sentellent-production-backend
+  ECS_FRONTEND_SERVICE: sentellent-production-frontend
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push backend image
+        id: build-backend
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_BACKEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_BACKEND:latest ./backend
+          docker push $ECR_REGISTRY/$ECR_BACKEND:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_BACKEND:latest
+          echo "image=$ECR_REGISTRY/$ECR_BACKEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get current backend task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition sentellent-production-backend \
+            --query 'taskDefinition' \
+            --output json > backend-task-def.json
+
+      - name: Update backend task definition with new image
+        id: render-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: backend-task-def.json
+          container-name: backend
+          image: ${{ steps.build-backend.outputs.image }}
+
+      - name: Deploy backend to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-backend.outputs.task-definition }}
+          service: ${{ env.ECS_BACKEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          wait-for-minutes: 10
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [deploy-backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get ALB DNS for API rewrites
+        id: alb
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names sentellent-production-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+          echo "dns=$ALB_DNS" >> $GITHUB_OUTPUT
+
+      - name: Build, tag, and push frontend image
+        id: build-frontend
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --build-arg API_URL=http://${{ steps.alb.outputs.dns }} \
+            -t $ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_FRONTEND:latest ./frontend
+          docker push $ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
+          echo "image=$ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get current frontend task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition sentellent-production-frontend \
+            --query 'taskDefinition' \
+            --output json > frontend-task-def.json
+
+      - name: Update frontend task definition with new image
+        id: render-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: frontend-task-def.json
+          container-name: frontend
+          image: ${{ steps.build-frontend.outputs.image }}
+
+      - name: Deploy frontend to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-frontend.outputs.task-definition }}
+          service: ${{ env.ECS_FRONTEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          wait-for-minutes: 10
+
+  run-migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [deploy-backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run Alembic migrations as one-off ECS task
+        run: |
+          # Reuse the backend service's network config so the task can reach RDS.
+          NETWORK_CONFIG=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_BACKEND_SERVICE }} \
+            --query 'services[0].networkConfiguration' \
+            --output json)
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition sentellent-production-backend \
+            --launch-type FARGATE \
+            --network-configuration "$NETWORK_CONFIG" \
+            --overrides '{"containerOverrides":[{"name":"backend","command":["alembic","upgrade","head"]}]}' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster ${{ env.ECS_CLUSTER }} --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code $EXIT_CODE"
+            exit 1
+          fi
+          echo "Migrations applied successfully"
+
+  smoke-test:
+    name: Post-Deploy Smoke Test
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, run-migrations]
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get ALB DNS
+        id: alb
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names sentellent-production-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+          echo "dns=$ALB_DNS" >> $GITHUB_OUTPUT
+
+      - name: Health check - Backend
+        run: |
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.alb.outputs.dns }}/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Backend health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: Status $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "Backend health check failed"
+          exit 1
+
+      - name: Health check - Frontend
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.alb.outputs.dns }}/)
+          if [ "$STATUS" = "200" ]; then
+            echo "Frontend health check passed"
+          else
+            echo "Frontend health check failed with status $STATUS"
+            exit 1
+          fi
+
+      - name: Health check - API
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ steps.alb.outputs.dns }}/api/v1/auth/me)
+          if [ "$STATUS" = "401" ]; then
+            echo "API responding correctly (401 for unauthenticated)"
+          else
+            echo "API check: status $STATUS"
+          fi
