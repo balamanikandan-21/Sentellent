@@ -95,6 +95,11 @@ resource "aws_ecs_task_definition" "frontend" {
 
     environment = [
       { name = "API_URL", value = "http://${aws_lb.main.dns_name}" },
+      # Next.js standalone binds to $HOSTNAME. Fargate overrides that variable
+      # with the task's own hostname, so the server ended up listening only on
+      # ip-10-x-x-x and every loopback health probe failed while the ALB (which
+      # dials the task IP) succeeded. Pin it back to all interfaces.
+      { name = "HOSTNAME", value = "0.0.0.0" },
     ]
 
     logConfiguration = {
@@ -106,12 +111,18 @@ resource "aws_ecs_task_definition" "frontend" {
       }
     }
 
+    # Probe with node, not busybox wget. `wget --spider` sends a HEAD and
+    # behaves inconsistently on Alpine; it failed here even though the app was
+    # serving, so ECS killed and replaced healthy tasks in a loop.
     healthCheck = {
-      command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+      command = [
+        "CMD-SHELL",
+        "node -e \"fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+      ]
       interval    = 30
       timeout     = 5
       retries     = 3
-      startPeriod = 15
+      startPeriod = 20
     }
   }])
 }

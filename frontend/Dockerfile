@@ -40,7 +40,11 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+# Probe with node rather than busybox wget: `wget --spider` sends a HEAD and
+# behaves inconsistently on Alpine, which failed here and made ECS kill and
+# replace healthy tasks in a loop. node is guaranteed present in this image and
+# fetch is global on Node 18+.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "server.js"]
