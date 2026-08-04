@@ -106,24 +106,13 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Get ALB DNS for API rewrites
-        id: alb
-        run: |
-          ALB_DNS=$(aws elbv2 describe-load-balancers \
-            --names sentellent-production-alb \
-            --query 'LoadBalancers[0].DNSName' \
-            --output text)
-          echo "dns=$ALB_DNS" >> $GITHUB_OUTPUT
-
       - name: Build, tag, and push frontend image
         id: build-frontend
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build \
-            --build-arg API_URL=http://${{ steps.alb.outputs.dns }} \
-            -t $ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_FRONTEND:latest ./frontend
+          docker build -t $ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_FRONTEND:latest ./frontend
           docker push $ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_FRONTEND:latest
           echo "image=$ECR_REGISTRY/$ECR_FRONTEND:$IMAGE_TAG" >> $GITHUB_OUTPUT

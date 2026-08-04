@@ -15,10 +15,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js standalone output bakes rewrite destinations at build time,
-# so the backend URL must be supplied here, not at runtime.
-ARG API_URL=http://localhost:8000
-ENV API_URL=$API_URL
+# API_URL is read at request time by src/app/api/[...path]/route.ts, so it is
+# a runtime env var (set on the ECS task), not a build input.
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

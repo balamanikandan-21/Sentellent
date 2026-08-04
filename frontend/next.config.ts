@@ -12,14 +12,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.API_URL || "http://localhost:8000"}/api/:path*`,
-      },
-    ]
-  },
+  // /api/* is proxied by the runtime route handler in
+  // src/app/api/[...path]/route.ts rather than a rewrite here. Rewrites
+  // resolve their destination at build time, which made API_URL a build-time
+  // input — wrong for both ECS (where it is a task env var) and Vercel.
 }
 
 export default nextConfig
