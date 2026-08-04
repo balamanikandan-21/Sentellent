@@ -59,7 +59,19 @@ async function proxy(request: NextRequest): Promise<Response> {
     } as RequestInit)
   } catch (error) {
     return Response.json(
-      { detail: "Upstream API is unreachable." },
+      {
+        detail: "Upstream API is unreachable.",
+        // Temporary diagnostics — the backend host is public, no secrets here.
+        debug: {
+          target,
+          apiUrlConfigured: Boolean(process.env.API_URL),
+          error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+          cause:
+            error instanceof Error && error.cause
+              ? String((error.cause as { message?: string })?.message ?? error.cause)
+              : null,
+        },
+      },
       { status: 502 },
     )
   }
