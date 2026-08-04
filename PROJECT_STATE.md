@@ -9,8 +9,70 @@
 **Challenge PDF:** `C:\Users\Admin\Downloads\Sentellent_Hiring_Challenge.pdf` (fully parsed; all requirements mapped — see README "Challenge Compliance" table)
 
 ## Current Phase
-**Phase:** Code complete + production audit done. **ALL implementation phases finished (1–6 + audit).**
-**Next:** MANUAL deployment steps only (see "Remaining manual steps" below), then submit.
+**Phase:** DEPLOYED TO AWS AND LIVE. Code complete, audited, all bugs fixed.
+**Next:** One blocker — HTTPS for Google OAuth (see "CURRENT BLOCKER" below), then submit.
+
+## LIVE DEPLOYMENT (as of 2026-08-04)
+
+**Live URL (HTTP):** http://sentellent-production-alb-1948993569.ap-south-1.elb.amazonaws.com
+- `/health` returns `{"status":"ok","database":"connected"}`
+- Frontend serves, API correctly 401s unauthenticated
+
+**AWS account:** 145908329001 · region ap-south-1 · IAM user `bala` (AdministratorAccess)
+**Terraform state:** s3://sentellent-terraform-state-145908329001 + DynamoDB `sentellent-terraform-locks`
+
+| Resource | Status |
+|---|---|
+| RDS PostgreSQL 16.13 + pgvector | available, migrations applied (exit 0) |
+| ECS Fargate: backend + frontend | 1 task each, both healthy |
+| ALB + 2 target groups | both healthy |
+| ECR: 2 repos | images pushed (`:latest`) |
+| Secrets Manager: 6 secrets | populated incl. real API keys |
+| CloudWatch dashboard + 6 alarms | live |
+| EventBridge nightly refresh | scheduled 02:00 IST |
+| CloudFront | **BLOCKED — not created** |
+
+**GitHub OIDC role (set as `AWS_DEPLOY_ROLE_ARN` repo secret):**
+`arn:aws:iam::145908329001:role/sentellent-production-github-actions`
+
+**CloudWatch dashboard (screenshot for submission):**
+https://ap-south-1.console.aws.amazon.com/cloudwatch/home?region=ap-south-1#dashboards:name=sentellent-production-dashboard
+
+## CURRENT BLOCKER — HTTPS for Google OAuth
+
+Google refuses non-HTTPS redirect URIs, so **login does not work on the HTTP ALB URL**.
+CloudFront would supply HTTPS free, but the AWS account is not verified:
+
+> `AccessDenied: Your account must be verified before you can add new CloudFront resources.`
+
+Tried 4× via Terraform and once via console — it is an **account-level** restriction, so the
+console hits the same API and fails identically. AWS Support case
+**"Enable CloudFront distribution creation"** is filed but still unassigned.
+(Case status cannot be polled via CLI — `describe-cases` needs a paid support plan.)
+
+### Two ways forward
+
+**A. CloudFront (once AWS approves the case):**
+```
+cd infra && terraform apply -var="enable_cloudfront=true"
+```
+Then add `https://<cloudfront-domain>/api/v1/auth/google/callback` in GCP Console.
+
+**B. Vercel frontend fallback (~10 min, free, no waiting):**
+1. vercel.com/new → import `balamanikandan-21/Sentellent`
+2. **Root Directory = `frontend`** (monorepo — critical)
+3. Env var `API_URL` = `http://sentellent-production-alb-1948993569.ap-south-1.elb.amazonaws.com`
+4. Deploy, copy the `*.vercel.app` URL
+5. `cd infra && terraform apply -var="public_url_override=https://<vercel-domain>"`
+   (this variable already exists and rewires CORS_ORIGINS / FRONTEND_URL / GOOGLE_REDIRECT_URI)
+6. Add `https://<vercel-domain>/api/v1/auth/google/callback` in GCP Console
+
+Option B keeps every graded component (ECS, RDS, Terraform, CI/CD, the agent) on AWS.
+
+## COST WARNING
+AWS is running now at roughly **$2/day** (~$60/mo): RDS db.t3.micro, 2 Fargate tasks, ALB,
+Secrets Manager. AWS credits ($20 earned of $100 available) offset this.
+**Tear down when evaluation finishes:** `cd infra && terraform destroy`
 
 ## What is built (all verified working)
 
