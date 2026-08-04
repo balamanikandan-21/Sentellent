@@ -51,9 +51,7 @@ async def generate_embeddings(texts: list[str]) -> list[list[float]]:
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         logger.debug("embedding_batch", batch_index=i // batch_size, size=len(batch))
-        embeddings = await asyncio.to_thread(
-            _embed_batch_sync, batch, model, dimensions
-        )
+        embeddings = await asyncio.to_thread(_embed_batch_sync, batch, model, dimensions)
         all_embeddings.extend(embeddings)
 
     logger.info("embeddings_generated", count=len(all_embeddings))

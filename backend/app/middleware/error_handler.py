@@ -2,14 +2,14 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.core.exceptions import AppException
+from app.core.exceptions import AppError
 
 logger = structlog.get_logger()
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    @app.exception_handler(AppException)
-    async def app_exception_handler(_request: Request, exc: AppException) -> JSONResponse:
+    @app.exception_handler(AppError)
+    async def app_exception_handler(_request: Request, exc: AppError) -> JSONResponse:
         logger.warning(
             "app_exception",
             error_code=exc.error_code,

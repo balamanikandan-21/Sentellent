@@ -43,12 +43,16 @@ async def update_sentiment(state: AgentState, db: AsyncSession) -> AgentState:
 
     for ticker in tickers[:3]:
         try:
-            response = await llm.ainvoke([
-                SystemMessage(content="You score sentiment."),
-                HumanMessage(
-                    content=SENTIMENT_SCORE_PROMPT.format(ticker=ticker, analysis=analysis[:2000])
-                ),
-            ])
+            response = await llm.ainvoke(
+                [
+                    SystemMessage(content="You score sentiment."),
+                    HumanMessage(
+                        content=SENTIMENT_SCORE_PROMPT.format(
+                            ticker=ticker, analysis=analysis[:2000]
+                        )
+                    ),
+                ]
+            )
 
             result = json.loads(response.content)
             score = float(result.get("score", 0))
@@ -63,9 +67,7 @@ async def update_sentiment(state: AgentState, db: AsyncSession) -> AgentState:
 
             if existing:
                 count = existing.article_count + 1
-                existing.avg_score = (
-                    (existing.avg_score * existing.article_count) + score
-                ) / count
+                existing.avg_score = ((existing.avg_score * existing.article_count) + score) / count
                 existing.article_count = count
                 if label == "bullish":
                     existing.positive_count += 1

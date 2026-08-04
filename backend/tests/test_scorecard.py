@@ -3,8 +3,11 @@ from app.recommendation.types import FactorScore, ScoreCard
 
 def _factor(name: str, score: float, weight: float, available: bool = True) -> FactorScore:
     return FactorScore(
-        name=name, score=score, weight=weight,
-        data_available=available, reasoning="test",
+        name=name,
+        score=score,
+        weight=weight,
+        data_available=available,
+        reasoning="test",
     )
 
 
@@ -76,9 +79,7 @@ class TestScoreCard:
         assert half.data_coverage == 0.5
         assert half.confidence == "medium"
 
-        factors_low = factors[:1] + [
-            _factor(str(i), 0.5, 0.25, available=False) for i in range(3)
-        ]
+        factors_low = factors[:1] + [_factor(str(i), 0.5, 0.25, available=False) for i in range(3)]
         low = ScoreCard(ticker="X", factors=factors_low)
         assert low.data_coverage == 0.25
         assert low.confidence == "low"
@@ -90,6 +91,11 @@ class TestScoreCard:
         assert d["action"] == "BUY"
         assert len(d["factors"]) == 1
         assert set(d["factors"][0]) == {
-            "name", "score", "weight", "weighted_score",
-            "data_available", "reasoning", "sources",
+            "name",
+            "score",
+            "weight",
+            "weighted_score",
+            "data_available",
+            "reasoning",
+            "sources",
         }

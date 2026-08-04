@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.rag.confidence import compute_confidence
 from app.rag.types import RetrievedChunk
@@ -12,7 +12,7 @@ def _chunk(article_id: str, combined: float, rerank: float | None = None) -> Ret
         article_title="t",
         article_url="https://example.com",
         article_source="MoneyControl",
-        published_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
         sentiment=None,
         category=None,
         vector_score=combined,

@@ -29,12 +29,7 @@ def compute_confidence(
     unique_articles = len({c.article_id for c in chunks})
     diversity = min(unique_articles / max(len(chunks), 1), 1.0)
 
-    confidence = (
-        0.40 * avg_score
-        + 0.25 * best_score
-        + 0.20 * high_quality
-        + 0.15 * diversity
-    )
+    confidence = 0.40 * avg_score + 0.25 * best_score + 0.20 * high_quality + 0.15 * diversity
 
     confidence = max(0.0, min(1.0, confidence))
 

@@ -1,22 +1,22 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.router import api_v1_router
 from app.config.settings import get_settings
 from app.core.logging import setup_logging
 from app.middleware.error_handler import register_exception_handlers
 from app.middleware.request_logging import RequestLoggingMiddleware
-from app.api.v1.router import api_v1_router
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     setup_logging()
     yield
-    from app.db.session import get_engine
     from app.core.redis import close_redis
+    from app.db.session import get_engine
 
     await close_redis()
     engine = get_engine()
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, str]:
         from sqlalchemy import text
+
         from app.db.session import get_engine
 
         try:

@@ -30,8 +30,11 @@ def score_fundamentals(info: dict) -> FactorScore:
     available = any(v is not None for v in [pe, pb, roe, margin, dte])
     if not available:
         return FactorScore(
-            name="fundamentals", score=0.5, weight=0.20,
-            data_available=False, reasoning="No fundamentals data available.",
+            name="fundamentals",
+            score=0.5,
+            weight=0.20,
+            data_available=False,
+            reasoning="No fundamentals data available.",
         )
 
     signals: list[float] = []
@@ -74,8 +77,11 @@ def score_fundamentals(info: dict) -> FactorScore:
 
     score = sum(signals) / len(signals) if signals else 0.5
     return FactorScore(
-        name="fundamentals", score=score, weight=0.20,
-        data_available=True, reasoning="; ".join(reasons),
+        name="fundamentals",
+        score=score,
+        weight=0.20,
+        data_available=True,
+        reasoning="; ".join(reasons),
         sources=list(set(sources)),
     )
 
@@ -87,8 +93,11 @@ def score_momentum(info: dict) -> FactorScore:
 
     if price is None or high52 is None or low52 is None:
         return FactorScore(
-            name="momentum", score=0.5, weight=0.10,
-            data_available=False, reasoning="Price/52-week range data unavailable.",
+            name="momentum",
+            score=0.5,
+            weight=0.10,
+            data_available=False,
+            reasoning="Price/52-week range data unavailable.",
         )
 
     if high52 == low52:
@@ -116,7 +125,9 @@ def score_momentum(info: dict) -> FactorScore:
 
     price_str = format_inr(price) or f"Rs. {price:,.2f}"
     return FactorScore(
-        name="momentum", score=score, weight=0.10,
+        name="momentum",
+        score=score,
+        weight=0.10,
         data_available=True,
         reasoning=f"Price {price_str} at {position:.0%} of 52W range ({label})",
         sources=["Fundamentals"],
@@ -128,14 +139,20 @@ def score_dividend(info: dict) -> FactorScore:
 
     if div_yield is None:
         return FactorScore(
-            name="dividend", score=0.5, weight=0.10,
-            data_available=False, reasoning="No dividend data available.",
+            name="dividend",
+            score=0.5,
+            weight=0.10,
+            data_available=False,
+            reasoning="No dividend data available.",
         )
 
     if div_yield <= 0:
         return FactorScore(
-            name="dividend", score=0.2, weight=0.10,
-            data_available=True, reasoning="No dividend payout.",
+            name="dividend",
+            score=0.2,
+            weight=0.10,
+            data_available=True,
+            reasoning="No dividend payout.",
             sources=["Fundamentals"],
         )
 
@@ -153,7 +170,9 @@ def score_dividend(info: dict) -> FactorScore:
         label = "low"
 
     return FactorScore(
-        name="dividend", score=score, weight=0.10,
+        name="dividend",
+        score=score,
+        weight=0.10,
         data_available=True,
         reasoning=f"Dividend yield {div_yield:.2%} ({label})",
         sources=["Fundamentals"],
@@ -170,8 +189,11 @@ def score_value(info: dict) -> FactorScore:
     available = any(v is not None for v in [pe, pb, eps])
     if not available:
         return FactorScore(
-            name="value", score=0.5, weight=0.12,
-            data_available=False, reasoning="Insufficient valuation data.",
+            name="value",
+            score=0.5,
+            weight=0.12,
+            data_available=False,
+            reasoning="Insufficient valuation data.",
         )
 
     signals: list[float] = []
@@ -210,8 +232,11 @@ def score_value(info: dict) -> FactorScore:
 
     score = sum(signals) / len(signals) if signals else 0.5
     return FactorScore(
-        name="value", score=score, weight=0.12,
-        data_available=True, reasoning="; ".join(reasons),
+        name="value",
+        score=score,
+        weight=0.12,
+        data_available=True,
+        reasoning="; ".join(reasons),
         sources=["Fundamentals"],
     )
 
@@ -224,8 +249,11 @@ def score_growth(info: dict, financials: dict | None = None) -> FactorScore:
     available = any(v is not None for v in [roe, margin])
     if not available:
         return FactorScore(
-            name="growth", score=0.5, weight=0.12,
-            data_available=False, reasoning="No growth data available.",
+            name="growth",
+            score=0.5,
+            weight=0.12,
+            data_available=False,
+            reasoning="No growth data available.",
         )
 
     signals: list[float] = []
@@ -263,8 +291,11 @@ def score_growth(info: dict, financials: dict | None = None) -> FactorScore:
 
     score = sum(signals) / len(signals) if signals else 0.5
     return FactorScore(
-        name="growth", score=score, weight=0.12,
-        data_available=True, reasoning="; ".join(reasons),
+        name="growth",
+        score=score,
+        weight=0.12,
+        data_available=True,
+        reasoning="; ".join(reasons),
         sources=["Fundamentals"],
     )
 
@@ -277,8 +308,11 @@ def score_quality(info: dict) -> FactorScore:
     available = any(v is not None for v in [roe, margin, dte])
     if not available:
         return FactorScore(
-            name="quality", score=0.5, weight=0.10,
-            data_available=False, reasoning="Insufficient quality metrics.",
+            name="quality",
+            score=0.5,
+            weight=0.10,
+            data_available=False,
+            reasoning="Insufficient quality metrics.",
         )
 
     signals: list[float] = []
@@ -329,8 +363,11 @@ def score_quality(info: dict) -> FactorScore:
 
     score = sum(signals) / len(signals) if signals else 0.5
     return FactorScore(
-        name="quality", score=score, weight=0.10,
-        data_available=True, reasoning="; ".join(reasons),
+        name="quality",
+        score=score,
+        weight=0.10,
+        data_available=True,
+        reasoning="; ".join(reasons),
         sources=["Fundamentals"],
     )
 
@@ -344,8 +381,11 @@ def score_risk(info: dict) -> FactorScore:
     available = any(v is not None for v in [beta, dte])
     if not available:
         return FactorScore(
-            name="risk", score=0.5, weight=0.10,
-            data_available=False, reasoning="No risk metrics available.",
+            name="risk",
+            score=0.5,
+            weight=0.10,
+            data_available=False,
+            reasoning="No risk metrics available.",
         )
 
     signals: list[float] = []
@@ -388,8 +428,11 @@ def score_risk(info: dict) -> FactorScore:
 
     score = sum(signals) / len(signals) if signals else 0.5
     return FactorScore(
-        name="risk", score=score, weight=0.10,
-        data_available=True, reasoning="; ".join(reasons),
+        name="risk",
+        score=score,
+        weight=0.10,
+        data_available=True,
+        reasoning="; ".join(reasons),
         sources=["Fundamentals"],
     )
 
@@ -400,7 +443,9 @@ def score_news_sentiment(
 ) -> FactorScore:
     if not chunks:
         return FactorScore(
-            name="news_sentiment", score=0.5, weight=0.08,
+            name="news_sentiment",
+            score=0.5,
+            weight=0.08,
             data_available=False,
             reasoning="No news articles found in corpus.",
         )
@@ -420,8 +465,11 @@ def score_news_sentiment(
     total = sum(sentiments.values())
     if total == 0:
         return FactorScore(
-            name="news_sentiment", score=0.5, weight=0.08,
-            data_available=False, reasoning="No sentiment data.",
+            name="news_sentiment",
+            score=0.5,
+            weight=0.08,
+            data_available=False,
+            reasoning="No sentiment data.",
         )
 
     positive_ratio = sentiments["positive"] / total
@@ -441,7 +489,9 @@ def score_news_sentiment(
     unique_sources = list(dict.fromkeys(source_names))[:5]
 
     return FactorScore(
-        name="news_sentiment", score=score, weight=0.08,
+        name="news_sentiment",
+        score=score,
+        weight=0.08,
         data_available=True,
         reasoning=f"News sentiment from {total} articles: {', '.join(parts)}",
         sources=unique_sources,
@@ -454,7 +504,9 @@ def score_persona_alignment(
 ) -> FactorScore:
     if not persona:
         return FactorScore(
-            name="persona_alignment", score=0.5, weight=0.08,
+            name="persona_alignment",
+            score=0.5,
+            weight=0.08,
             data_available=False,
             reasoning="No investor profile available.",
         )
@@ -525,13 +577,18 @@ def score_persona_alignment(
 
     if not signals:
         return FactorScore(
-            name="persona_alignment", score=0.5, weight=0.08,
+            name="persona_alignment",
+            score=0.5,
+            weight=0.08,
             data_available=True,
             reasoning="No specific alignment signals detected.",
         )
 
     score = sum(signals) / len(signals)
     return FactorScore(
-        name="persona_alignment", score=score, weight=0.08,
-        data_available=True, reasoning="; ".join(reasons),
+        name="persona_alignment",
+        score=score,
+        weight=0.08,
+        data_available=True,
+        reasoning="; ".join(reasons),
     )

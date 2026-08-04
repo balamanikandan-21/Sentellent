@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,11 +43,8 @@ class ArticleRepository(BaseRepository[Article]):
     async def search_similar(
         self, embedding: list[float], *, limit: int = 5, ticker_symbol: str | None = None
     ) -> Sequence[ArticleChunk]:
-        from pgvector.sqlalchemy import Vector
 
-        stmt = select(ArticleChunk).order_by(
-            ArticleChunk.embedding.cosine_distance(embedding)
-        )
+        stmt = select(ArticleChunk).order_by(ArticleChunk.embedding.cosine_distance(embedding))
         if ticker_symbol:
             stmt = (
                 stmt.join(Article, Article.id == ArticleChunk.article_id)

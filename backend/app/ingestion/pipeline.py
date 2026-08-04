@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import hashlib
-import uuid
 from contextlib import asynccontextmanager
 
 import structlog
-from sqlalchemy import select, delete, text
+from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
@@ -16,11 +15,7 @@ from app.ingestion.processors.chunker import TextChunk, chunk_text
 from app.ingestion.processors.dedup import compute_content_hash
 from app.ingestion.processors.embeddings import generate_embeddings
 from app.ingestion.processors.metadata import extract_article_metadata, extract_tickers
-from app.models.article import Article
-from app.models.article_chunk import ArticleChunk
-from app.models.article_ticker import ArticleTicker
 from app.models.fundamentals_chunk import FundamentalsChunk
-from app.models.ingestion_job import IngestionJob
 from app.models.ticker import Ticker
 from app.repositories.article import ArticleRepository
 from app.repositories.ingestion import IngestionRepository
@@ -55,9 +50,7 @@ async def _ticker_lock(symbol: str):
         acquired = bool(result.scalar_one())
         yield acquired
         if acquired:
-            await conn.execute(
-                text("SELECT pg_advisory_unlock(:lock_id)"), {"lock_id": lock_id}
-            )
+            await conn.execute(text("SELECT pg_advisory_unlock(:lock_id)"), {"lock_id": lock_id})
     finally:
         await conn.close()
 
@@ -96,26 +89,35 @@ async def _store_fundamentals(
 
     if info.get("description"):
         chunks_to_embed.append(info["description"])
-        chunk_records.append({
-            "chunk_type": "description",
-            "content": info["description"],
-            "period": "latest",
-        })
+        chunk_records.append(
+            {
+                "chunk_type": "description",
+                "content": info["description"],
+                "period": "latest",
+            }
+        )
 
     for stmt_type, stmt_data in financials.items():
         if not stmt_data:
             continue
-        lines = [f"{k}: Rs. {v:,.0f}" if isinstance(v, (int, float)) else f"{k}: {v}"
-                 for k, v in stmt_data.items() if v is not None]
+        lines = [
+            f"{k}: Rs. {v:,.0f}" if isinstance(v, (int, float)) else f"{k}: {v}"
+            for k, v in stmt_data.items()
+            if v is not None
+        ]
         text = f"{symbol} {stmt_type.replace('_', ' ').title()}:\n" + "\n".join(lines)
 
-        for chunk in chunk_text(text, chunk_size=settings.CHUNK_SIZE, chunk_overlap=settings.CHUNK_OVERLAP):
+        for chunk in chunk_text(
+            text, chunk_size=settings.CHUNK_SIZE, chunk_overlap=settings.CHUNK_OVERLAP
+        ):
             chunks_to_embed.append(chunk.content)
-            chunk_records.append({
-                "chunk_type": stmt_type,
-                "content": chunk.content,
-                "period": "latest",
-            })
+            chunk_records.append(
+                {
+                    "chunk_type": stmt_type,
+                    "content": chunk.content,
+                    "period": "latest",
+                }
+            )
 
     if chunks_to_embed:
         embeddings = await generate_embeddings(chunks_to_embed)
@@ -253,7 +255,7 @@ async def _run_ingestion_locked(db: AsyncSession, symbol: str, log) -> dict:
         fundamentals = await fetch_fundamentals(symbol)
 
         info = fundamentals["info"]
-        ticker = await ticker_repo.upsert(
+        await ticker_repo.upsert(
             symbol,
             company_name=info["company_name"],
             exchange=info.get("exchange", "NSE"),

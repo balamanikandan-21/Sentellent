@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Sequence
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,13 +70,10 @@ class MemoryRepository:
     async def find_duplicate(
         self, user_id: uuid.UUID, category: str, content: str
     ) -> UserMemory | None:
-        stmt = (
-            select(UserMemory)
-            .where(
-                UserMemory.user_id == user_id,
-                UserMemory.category == category,
-                UserMemory.active == True,  # noqa: E712
-            )
+        stmt = select(UserMemory).where(
+            UserMemory.user_id == user_id,
+            UserMemory.category == category,
+            UserMemory.active == True,  # noqa: E712
         )
         result = await self.session.execute(stmt)
         existing = result.scalars().all()
@@ -119,17 +116,11 @@ class MemoryRepository:
         return memory
 
     async def deactivate(self, memory_id: uuid.UUID) -> None:
-        stmt = (
-            update(UserMemory)
-            .where(UserMemory.id == memory_id)
-            .values(active=False)
-        )
+        stmt = update(UserMemory).where(UserMemory.id == memory_id).values(active=False)
         await self.session.execute(stmt)
         await self.session.flush()
 
-    async def deactivate_by_category(
-        self, user_id: uuid.UUID, category: str
-    ) -> int:
+    async def deactivate_by_category(self, user_id: uuid.UUID, category: str) -> int:
         stmt = (
             update(UserMemory)
             .where(

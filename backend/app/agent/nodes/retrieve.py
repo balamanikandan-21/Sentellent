@@ -21,21 +21,23 @@ async def retrieve_documents(state: AgentState, db: AsyncSession) -> AgentState:
 
     all_chunks: list[dict] = []
     for chunk in result.chunks:
-        all_chunks.append({
-            "content": chunk.content,
-            "article_id": chunk.article_id,
-            "chunk_index": chunk.chunk_index,
-            "article_title": chunk.article_title,
-            "article_url": chunk.article_url,
-            "article_source": chunk.article_source,
-            "published_at": chunk.published_at.isoformat() if chunk.published_at else None,
-            "sentiment": chunk.sentiment,
-            "category": chunk.category,
-            "vector_score": chunk.vector_score,
-            "keyword_score": chunk.keyword_score,
-            "combined_score": chunk.combined_score,
-            "rerank_score": chunk.rerank_score,
-        })
+        all_chunks.append(
+            {
+                "content": chunk.content,
+                "article_id": chunk.article_id,
+                "chunk_index": chunk.chunk_index,
+                "article_title": chunk.article_title,
+                "article_url": chunk.article_url,
+                "article_source": chunk.article_source,
+                "published_at": chunk.published_at.isoformat() if chunk.published_at else None,
+                "sentiment": chunk.sentiment,
+                "category": chunk.category,
+                "vector_score": chunk.vector_score,
+                "keyword_score": chunk.keyword_score,
+                "combined_score": chunk.combined_score,
+                "rerank_score": chunk.rerank_score,
+            }
+        )
 
     all_fundamentals: list[dict] = []
     if tickers:
@@ -43,12 +45,14 @@ async def retrieve_documents(state: AgentState, db: AsyncSession) -> AgentState:
         for symbol in tickers:
             ticker = await ticker_repo.get_by_symbol(symbol)
             if ticker and ticker.fundamentals:
-                all_fundamentals.append({
-                    "symbol": ticker.symbol,
-                    "company_name": ticker.company_name,
-                    "sector": ticker.sector,
-                    "fundamentals": ticker.fundamentals,
-                })
+                all_fundamentals.append(
+                    {
+                        "symbol": ticker.symbol,
+                        "company_name": ticker.company_name,
+                        "sector": ticker.sector,
+                        "fundamentals": ticker.fundamentals,
+                    }
+                )
 
     logger.info(
         "rag_retrieval_complete",

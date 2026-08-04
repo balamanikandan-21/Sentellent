@@ -1,28 +1,28 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context
 from app.config.settings import get_settings
 from app.db.base import Base
 from app.models import (  # noqa: F401
-    User,
+    Article,
+    ArticleChunk,
+    ArticleTicker,
+    AuditLog,
+    ChatMessage,
+    ChatSession,
+    FundamentalsChunk,
+    IngestionJob,
+    InvestorPersona,
+    Recommendation,
     RefreshToken,
     Ticker,
-    UserTicker,
-    Article,
-    ArticleTicker,
-    ArticleChunk,
-    FundamentalsChunk,
-    ChatSession,
-    ChatMessage,
-    InvestorPersona,
     TickerSentiment,
-    IngestionJob,
-    Recommendation,
-    AuditLog,
+    User,
+    UserTicker,
 )
 
 config = context.config

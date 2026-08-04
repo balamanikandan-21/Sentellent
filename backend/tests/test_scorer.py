@@ -26,25 +26,29 @@ class TestScoreFundamentals:
         assert f.score == 0.5  # neutral fallback, excluded from composite anyway
 
     def test_cheap_profitable_low_debt_scores_high(self):
-        f = score_fundamentals({
-            "pe_ratio": 12.0,
-            "pb_ratio": 1.5,
-            "return_on_equity": 0.22,
-            "profit_margin": 0.18,
-            "debt_to_equity": 0.2,
-        })
+        f = score_fundamentals(
+            {
+                "pe_ratio": 12.0,
+                "pb_ratio": 1.5,
+                "return_on_equity": 0.22,
+                "profit_margin": 0.18,
+                "debt_to_equity": 0.2,
+            }
+        )
         assert f.data_available is True
         assert f.score > 0.6
         assert "Fundamentals" in f.sources
 
     def test_expensive_leveraged_scores_low(self):
-        f = score_fundamentals({
-            "pe_ratio": NIFTY_PE_MEDIAN * 3,
-            "pb_ratio": 12.0,
-            "return_on_equity": 0.02,
-            "profit_margin": 0.01,
-            "debt_to_equity": 2.5,
-        })
+        f = score_fundamentals(
+            {
+                "pe_ratio": NIFTY_PE_MEDIAN * 3,
+                "pb_ratio": 12.0,
+                "return_on_equity": 0.02,
+                "profit_margin": 0.01,
+                "debt_to_equity": 2.5,
+            }
+        )
         assert f.score < 0.4
 
     def test_debt_to_equity_percentage_normalization(self):
@@ -69,9 +73,13 @@ class TestScoreMomentum:
         assert near_low.score == 0.3
 
     def test_degenerate_range(self):
-        f = score_momentum({
-            "current_price": 100.0, "52_week_high": 100.0, "52_week_low": 100.0,
-        })
+        f = score_momentum(
+            {
+                "current_price": 100.0,
+                "52_week_high": 100.0,
+                "52_week_low": 100.0,
+            }
+        )
         assert f.data_available is True  # neutral, but no crash
 
 

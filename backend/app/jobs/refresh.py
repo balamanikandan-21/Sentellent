@@ -8,6 +8,7 @@ Ingestion is idempotent (content-hash dedup + per-ticker advisory locks), so
 overlapping with a user-triggered ingestion is safe: the scheduled run simply
 skips tickers that are locked.
 """
+
 from __future__ import annotations
 
 import asyncio

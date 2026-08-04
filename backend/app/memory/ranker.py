@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.memory.types import MemoryEntry
 
@@ -15,11 +15,11 @@ def rank_memories(
     recency_weight: float = 0.25,
 ) -> list[MemoryEntry]:
     """Rank memories by composite score: similarity + confidence + recency."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     for mem in memories:
         if mem.created_at:
-            age_days = (now - mem.created_at.replace(tzinfo=timezone.utc)).days
+            age_days = (now - mem.created_at.replace(tzinfo=UTC)).days
             mem.recency_score = math.exp(-age_days / decay_days)
         else:
             mem.recency_score = 0.5

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 import structlog
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,9 +86,7 @@ class RAGRetriever:
         }
 
         if filters.ticker_symbols:
-            where_clauses.append(
-                "at.ticker_symbol = ANY(:ticker_symbols)"
-            )
+            where_clauses.append("at.ticker_symbol = ANY(:ticker_symbols)")
             params["ticker_symbols"] = [s.upper() for s in filters.ticker_symbols]
 
         if filters.sources:
@@ -182,20 +178,22 @@ class RAGRetriever:
 
         chunks: list[RetrievedChunk] = []
         for row in rows:
-            chunks.append(RetrievedChunk(
-                content=row.content,
-                article_id=str(row.article_id),
-                chunk_index=row.chunk_index,
-                article_title=row.article_title,
-                article_url=row.article_url,
-                article_source=row.article_source,
-                published_at=row.published_at,
-                sentiment=row.sentiment,
-                category=row.category,
-                vector_score=float(row.vector_sim),
-                keyword_score=float(row.kw_rank),
-                combined_score=float(row.combined),
-            ))
+            chunks.append(
+                RetrievedChunk(
+                    content=row.content,
+                    article_id=str(row.article_id),
+                    chunk_index=row.chunk_index,
+                    article_title=row.article_title,
+                    article_url=row.article_url,
+                    article_source=row.article_source,
+                    published_at=row.published_at,
+                    sentiment=row.sentiment,
+                    category=row.category,
+                    vector_score=float(row.vector_sim),
+                    keyword_score=float(row.kw_rank),
+                    combined_score=float(row.combined),
+                )
+            )
 
         logger.info(
             "hybrid_search_done",

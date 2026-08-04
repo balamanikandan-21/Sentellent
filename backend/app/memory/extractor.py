@@ -73,20 +73,17 @@ async def extract_memories(
         temperature=0,
     )
 
-    history_text = "\n".join(
-        f"{m['role']}: {m['content'][:150]}"
-        for m in chat_history[-6:]
-    )
+    history_text = "\n".join(f"{m['role']}: {m['content'][:150]}" for m in chat_history[-6:])
 
-    response = await llm.ainvoke([
-        SystemMessage(
-            content="You extract investment preferences from conversations. "
-            "Be precise — only extract what the user actually said or clearly implied."
-        ),
-        HumanMessage(
-            content=EXTRACTION_PROMPT.format(query=query, history=history_text)
-        ),
-    ])
+    response = await llm.ainvoke(
+        [
+            SystemMessage(
+                content="You extract investment preferences from conversations. "
+                "Be precise — only extract what the user actually said or clearly implied."
+            ),
+            HumanMessage(content=EXTRACTION_PROMPT.format(query=query, history=history_text)),
+        ]
+    )
 
     raw = response.content if isinstance(response.content, str) else str(response.content)
 
@@ -101,8 +98,13 @@ async def extract_memories(
         return []
 
     valid_categories = {
-        "risk_appetite", "investment_style", "sector_preferences",
-        "investment_goals", "avoided_stocks", "preferred_stocks", "general",
+        "risk_appetite",
+        "investment_style",
+        "sector_preferences",
+        "investment_goals",
+        "avoided_stocks",
+        "preferred_stocks",
+        "general",
     }
 
     extracted: list[ExtractedMemory] = []
@@ -114,12 +116,14 @@ async def extract_memories(
         if category not in valid_categories or not content:
             continue
 
-        extracted.append(ExtractedMemory(
-            category=category,
-            content=content,
-            confidence=min(max(confidence, 0.1), 1.0),
-            supersedes=item.get("supersedes"),
-        ))
+        extracted.append(
+            ExtractedMemory(
+                category=category,
+                content=content,
+                confidence=min(max(confidence, 0.1), 1.0),
+                supersedes=item.get("supersedes"),
+            )
+        )
 
     logger.info("memories_extracted", count=len(extracted))
     return extracted

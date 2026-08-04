@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import uuid
 
@@ -19,6 +18,11 @@ from app.repositories.chat import ChatRepository
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+def _sse(payload: dict) -> str:
+    """Serialize one Server-Sent Events frame."""
+    return f"data: {json.dumps(payload)}\n\n"
 
 
 class MessageRequest(BaseModel):
@@ -83,6 +87,7 @@ async def get_messages(
     session = await chat_repo.get_session(session_id, user.id)
     if not session:
         from app.core.exceptions import NotFoundError
+
         raise NotFoundError("Chat session not found")
 
     messages = await chat_repo.get_messages(session_id)
@@ -110,33 +115,48 @@ async def send_message(
     session = await chat_repo.get_session(session_id, user.id)
     if not session:
         from app.core.exceptions import NotFoundError
+
         raise NotFoundError("Chat session not found")
 
     agent = AgentService(db)
 
     async def event_stream():
-        yield f"data: {json.dumps({'type': 'start'})}\n\n"
+        yield _sse({"type": "start"})
         try:
             state = await agent.process_message(user.id, session_id, body.content)
             response_text = state.get("response", "")
             citations = state.get("citations", [])
 
-            yield f"data: {json.dumps({'type': 'content', 'content': response_text})}\n\n"
+            yield _sse({"type": "content", "content": response_text})
 
             if citations:
-                yield f"data: {json.dumps({'type': 'citations', 'citations': citations})}\n\n"
+                yield _sse({"type": "citations", "citations": citations})
 
             confidence = state.get("confidence_score", 0.0)
-            yield f"data: {json.dumps({'type': 'metadata', 'confidence': round(confidence, 3), 'retrieval_method': state.get('retrieval_method', ''), 'sources_count': len(citations)})}\n\n"
+            yield _sse(
+                {
+                    "type": "metadata",
+                    "confidence": round(confidence, 3),
+                    "retrieval_method": state.get("retrieval_method", ""),
+                    "sources_count": len(citations),
+                }
+            )
 
             rec = state.get("recommendation")
             if rec and rec.get("scorecard"):
-                yield f"data: {json.dumps({'type': 'scorecard', 'scorecard': rec['scorecard']})}\n\n"
+                yield _sse({"type": "scorecard", "scorecard": rec["scorecard"]})
 
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            yield _sse({"type": "done"})
         except Exception:
             logger.exception("agent_error", session_id=str(session_id))
-            yield f"data: {json.dumps({'type': 'error', 'error': 'Something went wrong while generating the response. Please try again.'})}\n\n"
+            yield _sse(
+                {
+                    "type": "error",
+                    "error": (
+                        "Something went wrong while generating the response. Please try again."
+                    ),
+                }
+            )
 
     return StreamingResponse(
         event_stream(),
@@ -159,6 +179,7 @@ async def delete_session(
     session = await chat_repo.get_session(session_id, user.id)
     if not session:
         from app.core.exceptions import NotFoundError
+
         raise NotFoundError("Chat session not found")
 
     await chat_repo.delete_session(session)

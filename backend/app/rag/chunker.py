@@ -60,12 +60,14 @@ def chunk_with_context(
         if current_tokens + sent_tokens > budget and current_sentences:
             chunk_text = " ".join(current_sentences)
             full_text = f"{header}\n\n{chunk_text}" if header else chunk_text
-            chunks.append(EnrichedChunk(
-                index=idx,
-                content=full_text,
-                token_count=len(encoder.encode(full_text)),
-                header=header,
-            ))
+            chunks.append(
+                EnrichedChunk(
+                    index=idx,
+                    content=full_text,
+                    token_count=len(encoder.encode(full_text)),
+                    header=header,
+                )
+            )
             idx += 1
 
             overlap_tokens = 0
@@ -86,21 +88,25 @@ def chunk_with_context(
     if current_sentences:
         chunk_text = " ".join(current_sentences)
         full_text = f"{header}\n\n{chunk_text}" if header else chunk_text
-        chunks.append(EnrichedChunk(
-            index=idx,
-            content=full_text,
-            token_count=len(encoder.encode(full_text)),
-            header=header,
-        ))
+        chunks.append(
+            EnrichedChunk(
+                index=idx,
+                content=full_text,
+                token_count=len(encoder.encode(full_text)),
+                header=header,
+            )
+        )
 
     if not chunks:
         tokens = encoder.encode(text[:2000])
         full_text = f"{header}\n\n{text[:2000]}" if header else text[:2000]
-        chunks.append(EnrichedChunk(
-            index=0,
-            content=full_text,
-            token_count=len(tokens),
-            header=header,
-        ))
+        chunks.append(
+            EnrichedChunk(
+                index=0,
+                content=full_text,
+                token_count=len(tokens),
+                header=header,
+            )
+        )
 
     return chunks

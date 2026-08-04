@@ -108,16 +108,17 @@ def _build_analysis_text(result) -> str:
 
     card = result.scorecard
     lines.append("**Multi-Factor Scorecard**")
-    lines.append(f"| Factor | Score | Status |")
-    lines.append(f"|--------|-------|--------|")
+    lines.append("| Factor | Score | Status |")
+    lines.append("|--------|-------|--------|")
 
     for f in card.factors:
         status = f"{'%.0f' % (f.score * 100)}%" if f.data_available else "N/A"
         avail = "Available" if f.data_available else "Unavailable"
         lines.append(f"| {f.name.replace('_', ' ').title()} | {status} | {avail} |")
 
-    lines.append(f"\n**Composite: {card.composite_score:.0%}** "
-                 f"(Data coverage: {card.data_coverage:.0%})")
+    lines.append(
+        f"\n**Composite: {card.composite_score:.0%}** (Data coverage: {card.data_coverage:.0%})"
+    )
 
     lines.append("")
     for f in card.factors:

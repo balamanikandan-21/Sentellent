@@ -1,7 +1,7 @@
 from typing import Any
 
 
-class AppException(Exception):
+class AppError(Exception):
     def __init__(
         self,
         status_code: int = 500,
@@ -16,7 +16,7 @@ class AppException(Exception):
         super().__init__(detail)
 
 
-class NotFoundError(AppException):
+class NotFoundError(AppError):
     def __init__(self, entity: str, identifier: str):
         super().__init__(
             status_code=404,
@@ -26,29 +26,29 @@ class NotFoundError(AppException):
         )
 
 
-class ConflictError(AppException):
+class ConflictError(AppError):
     def __init__(self, detail: str):
         super().__init__(status_code=409, detail=detail, error_code="CONFLICT")
 
 
-class UnauthorizedError(AppException):
+class UnauthorizedError(AppError):
     def __init__(self, detail: str = "Authentication required"):
         super().__init__(status_code=401, detail=detail, error_code="UNAUTHORIZED")
 
 
-class ForbiddenError(AppException):
+class ForbiddenError(AppError):
     def __init__(self, detail: str = "Permission denied"):
         super().__init__(status_code=403, detail=detail, error_code="FORBIDDEN")
 
 
-class ValidationError(AppException):
+class ValidationError(AppError):
     def __init__(self, detail: str, context: dict[str, Any] | None = None):
         super().__init__(
             status_code=422, detail=detail, error_code="VALIDATION_ERROR", context=context
         )
 
 
-class ExternalServiceError(AppException):
+class ExternalServiceError(AppError):
     def __init__(self, service: str, detail: str):
         super().__init__(
             status_code=502,

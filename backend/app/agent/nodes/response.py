@@ -22,8 +22,8 @@ async def generate_response(state: AgentState) -> AgentState:
                 "- **Stock Research** — Ask about any NSE-listed company\n"
                 "- **Sentiment Analysis** — Get news sentiment for stocks you follow\n"
                 "- **Recommendations** — Get data-driven buy/hold/sell analysis\n\n"
-                "Try asking something like *\"What's the latest news on Reliance?\"* "
-                "or *\"Should I buy TCS?\"*"
+                'Try asking something like *"What\'s the latest news on Reliance?"* '
+                'or *"Should I buy TCS?"*'
             ),
             "confidence_score": 1.0,
         }
@@ -70,15 +70,20 @@ async def generate_response(state: AgentState) -> AgentState:
             "with phrases like 'based on limited available data'."
         )
 
-    prompt = RESPONSE_PROMPT.format(
-        analysis=analysis,
-        citations=citations_text or "No specific sources to cite.",
-    ) + confidence_note
+    prompt = (
+        RESPONSE_PROMPT.format(
+            analysis=analysis,
+            citations=citations_text or "No specific sources to cite.",
+        )
+        + confidence_note
+    )
 
-    response = await llm.ainvoke([
-        SystemMessage(content="You are the Sentellent Stock Analyst assistant."),
-        HumanMessage(content=prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            SystemMessage(content="You are the Sentellent Stock Analyst assistant."),
+            HumanMessage(content=prompt),
+        ]
+    )
 
     final_response = (
         response.content if isinstance(response.content, str) else str(response.content)

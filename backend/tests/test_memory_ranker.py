@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.memory.ranker import rank_memories
 from app.memory.types import MemoryEntry
@@ -17,7 +17,7 @@ def _memory(
         confidence=confidence,
         source="inferred",
         similarity=similarity,
-        created_at=datetime.now(timezone.utc) - timedelta(days=age_days),
+        created_at=datetime.now(UTC) - timedelta(days=age_days),
     )
 
 
@@ -52,8 +52,13 @@ class TestRankMemories:
 
     def test_missing_created_at_gets_neutral_recency(self):
         m = MemoryEntry(
-            id="x", category="general", content="t",
-            confidence=0.5, source="inferred", similarity=0.5, created_at=None,
+            id="x",
+            category="general",
+            content="t",
+            confidence=0.5,
+            source="inferred",
+            similarity=0.5,
+            created_at=None,
         )
         rank_memories([m])
         assert m.recency_score == 0.5

@@ -116,10 +116,12 @@ async def stock_analysis(state: AgentState) -> AgentState:
             confidence=f"{confidence:.0%}",
         )
 
-    response = await llm.ainvoke([
-        SystemMessage(content="You are an expert Indian equity research analyst."),
-        HumanMessage(content=prompt),
-    ])
+    response = await llm.ainvoke(
+        [
+            SystemMessage(content="You are an expert Indian equity research analyst."),
+            HumanMessage(content=prompt),
+        ]
+    )
 
     analysis = response.content if isinstance(response.content, str) else str(response.content)
     logger.info(

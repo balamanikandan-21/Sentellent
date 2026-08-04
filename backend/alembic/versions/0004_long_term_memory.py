@@ -5,14 +5,14 @@ Revises: 0003
 Create Date: 2026-08-01
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "0004"
-down_revision: Union[str, None] = "0003"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "0003"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -34,19 +34,32 @@ def upgrade() -> None:
 
     op.execute("CREATE INDEX ix_user_memories_user_id ON user_memories (user_id)")
     op.execute("CREATE INDEX ix_user_memories_category ON user_memories (category)")
-    op.execute("CREATE INDEX ix_user_memories_active ON user_memories (user_id, active) WHERE active = true")
+    op.execute(
+        "CREATE INDEX ix_user_memories_active "
+        "ON user_memories (user_id, active) WHERE active = true"
+    )
     op.execute("""
         CREATE INDEX ix_user_memories_embedding
         ON user_memories USING hnsw (embedding vector_cosine_ops)
         WITH (m = 16, ef_construction = 64)
     """)
 
-    op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS investment_style VARCHAR(30)")
+    op.execute(
+        "ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS investment_style VARCHAR(30)"
+    )
     op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS investment_goals TEXT")
-    op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS preferred_tickers VARCHAR(20)[]")
-    op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS avoided_tickers VARCHAR(20)[]")
-    op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS sector_preferences VARCHAR(50)[]")
-    op.execute("ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS avoided_sectors VARCHAR(50)[]")
+    op.execute(
+        "ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS preferred_tickers VARCHAR(20)[]"
+    )
+    op.execute(
+        "ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS avoided_tickers VARCHAR(20)[]"
+    )
+    op.execute(
+        "ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS sector_preferences VARCHAR(50)[]"
+    )
+    op.execute(
+        "ALTER TABLE investor_personas ADD COLUMN IF NOT EXISTS avoided_sectors VARCHAR(50)[]"
+    )
 
 
 def downgrade() -> None:

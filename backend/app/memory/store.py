@@ -175,9 +175,7 @@ class MemoryStore:
         )
         return stored_summaries
 
-    async def _handle_supersede(
-        self, user_id: uuid.UUID, mem: ExtractedMemory
-    ) -> None:
+    async def _handle_supersede(self, user_id: uuid.UUID, mem: ExtractedMemory) -> None:
         existing = await self.memory_repo.get_by_category(user_id, mem.category)
         for old_mem in existing:
             if mem.supersedes and mem.supersedes.lower() in old_mem.content.lower():
@@ -188,9 +186,7 @@ class MemoryStore:
                     new=mem.content[:60],
                 )
 
-    def _collect_persona_update(
-        self, mem: ExtractedMemory, updates: dict
-    ) -> None:
+    def _collect_persona_update(self, mem: ExtractedMemory, updates: dict) -> None:
         if mem.category in _CATEGORY_TO_PERSONA_FIELD:
             field_name = _CATEGORY_TO_PERSONA_FIELD[mem.category]
             updates[field_name] = mem.content

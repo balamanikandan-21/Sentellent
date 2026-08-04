@@ -75,11 +75,10 @@ def ticker_news_feeds(symbol: str, company_name: str | None = None) -> list[dict
     feeds: list[dict[str, str]] = []
     for term in terms[:2]:
         query = quote_plus(f'"{term}" (stock OR share OR NSE OR results OR earnings)')
-        feeds.append({
-            "name": f"Google News — {term}",
-            "url": (
-                f"https://news.google.com/rss/search?q={query}"
-                "&hl=en-IN&gl=IN&ceid=IN:en"
-            ),
-        })
+        feeds.append(
+            {
+                "name": f"Google News — {term}",
+                "url": (f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"),
+            }
+        )
     return feeds

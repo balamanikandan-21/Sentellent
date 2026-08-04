@@ -22,10 +22,12 @@ async def route_query(state: AgentState) -> AgentState:
         temperature=0,
     )
 
-    response = await llm.ainvoke([
-        SystemMessage(content=ROUTER_PROMPT),
-        HumanMessage(content=state["query"]),
-    ])
+    response = await llm.ainvoke(
+        [
+            SystemMessage(content=ROUTER_PROMPT),
+            HumanMessage(content=state["query"]),
+        ]
+    )
 
     try:
         result = json.loads(response.content)

@@ -133,7 +133,10 @@ class RecommendationEngine:
         query: str,
         retrieval_confidence: float,
     ) -> RecommendationResult:
-        if retrieval_confidence < self.settings.CONFIDENCE_THRESHOLD and scorecard.data_coverage < 0.3:
+        if (
+            retrieval_confidence < self.settings.CONFIDENCE_THRESHOLD
+            and scorecard.data_coverage < 0.3
+        ):
             return RecommendationResult(
                 ticker=ticker,
                 action="HOLD",
@@ -178,13 +181,15 @@ class RecommendationEngine:
             max_tokens=self.settings.LLM_MAX_TOKENS,
         )
 
-        response = await llm.ainvoke([
-            SystemMessage(
-                content="You are an expert Indian equity research analyst. "
-                "Respond ONLY with valid JSON."
-            ),
-            HumanMessage(content=prompt),
-        ])
+        response = await llm.ainvoke(
+            [
+                SystemMessage(
+                    content="You are an expert Indian equity research analyst. "
+                    "Respond ONLY with valid JSON."
+                ),
+                HumanMessage(content=prompt),
+            ]
+        )
 
         raw = response.content if isinstance(response.content, str) else str(response.content)
         parsed = self._parse_response(raw, scorecard, ticker, retrieval_confidence)

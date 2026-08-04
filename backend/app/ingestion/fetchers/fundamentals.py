@@ -43,8 +43,7 @@ def _fetch_yfinance(symbol: str) -> dict[str, Any]:
         if bs is not None and not bs.empty:
             latest = bs.iloc[:, 0]
             financials["balance_sheet"] = {
-                str(k): float(v) if v == v else None
-                for k, v in latest.items()
+                str(k): float(v) if v == v else None for k, v in latest.items()
             }
     except Exception:
         pass

@@ -22,9 +22,7 @@ def _get_encoder() -> tiktoken.Encoding:
     return _encoder
 
 
-def chunk_text(
-    text: str, *, chunk_size: int = 512, chunk_overlap: int = 64
-) -> list[TextChunk]:
+def chunk_text(text: str, *, chunk_size: int = 512, chunk_overlap: int = 64) -> list[TextChunk]:
     encoder = _get_encoder()
     tokens = encoder.encode(text)
 

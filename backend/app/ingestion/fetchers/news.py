@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import mktime
 
 import feedparser
@@ -47,9 +47,9 @@ def _extract_entry_content(entry: dict) -> str:
 
 def _parse_published(entry: dict) -> datetime | None:
     if hasattr(entry, "published_parsed") and entry.published_parsed:
-        return datetime.fromtimestamp(mktime(entry.published_parsed), tz=timezone.utc)
+        return datetime.fromtimestamp(mktime(entry.published_parsed), tz=UTC)
     if hasattr(entry, "updated_parsed") and entry.updated_parsed:
-        return datetime.fromtimestamp(mktime(entry.updated_parsed), tz=timezone.utc)
+        return datetime.fromtimestamp(mktime(entry.updated_parsed), tz=UTC)
     return None
 
 
@@ -116,10 +116,7 @@ async def fetch_news(
     )
     logger.info("fetching_news", symbol=symbol, feed_count=len(feed_configs))
 
-    tasks = [
-        _fetch_feed(fc["url"], fc["name"], max_articles)
-        for fc in feed_configs
-    ]
+    tasks = [_fetch_feed(fc["url"], fc["name"], max_articles) for fc in feed_configs]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     articles: list[RawArticle] = []

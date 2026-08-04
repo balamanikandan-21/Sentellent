@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Generic, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,9 +36,7 @@ class BaseRepository(Generic[T]):
         await self.session.delete(instance)
         await self.session.flush()
 
-    async def list(
-        self, *, offset: int = 0, limit: int = 100
-    ) -> Sequence[T]:
+    async def list(self, *, offset: int = 0, limit: int = 100) -> Sequence[T]:
         stmt = select(self.model).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
         return result.scalars().all()

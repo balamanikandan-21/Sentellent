@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
@@ -86,7 +86,7 @@ async def get_or_create_user(db: AsyncSession, google_user: dict) -> User:
 
 def create_access_token(user_id: str, email: str, role: str) -> str:
     settings = get_settings()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": user_id,
         "email": email,
@@ -115,8 +115,7 @@ async def create_refresh_token(db: AsyncSession, user_id: uuid.UUID) -> str:
         RefreshToken(
             user_id=user_id,
             token_hash=token_hash,
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES),
+            expires_at=datetime.now(UTC) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES),
         )
     )
     await db.flush()
@@ -129,7 +128,7 @@ async def verify_refresh_token(db: AsyncSession, raw_token: str) -> RefreshToken
         select(RefreshToken).where(
             RefreshToken.token_hash == token_hash,
             RefreshToken.revoked == False,  # noqa: E712
-            RefreshToken.expires_at > datetime.now(timezone.utc),
+            RefreshToken.expires_at > datetime.now(UTC),
         )
     )
     token = result.scalar_one_or_none()
@@ -140,9 +139,7 @@ async def verify_refresh_token(db: AsyncSession, raw_token: str) -> RefreshToken
 
 async def revoke_refresh_token(db: AsyncSession, raw_token: str) -> None:
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    result = await db.execute(
-        select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-    )
+    result = await db.execute(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
     token = result.scalar_one_or_none()
     if token:
         token.revoked = True

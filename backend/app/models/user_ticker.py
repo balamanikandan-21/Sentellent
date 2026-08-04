@@ -23,6 +23,4 @@ class UserTicker(Base):
         ForeignKey("tickers.symbol", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

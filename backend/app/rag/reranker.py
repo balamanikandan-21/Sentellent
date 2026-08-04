@@ -43,15 +43,15 @@ async def rerank_chunks(
         temperature=0,
     )
 
-    passages_text = "\n\n".join(
-        f"[{i}] {chunk.content[:300]}" for i, chunk in enumerate(chunks)
-    )
+    passages_text = "\n\n".join(f"[{i}] {chunk.content[:300]}" for i, chunk in enumerate(chunks))
 
     try:
-        response = await llm.ainvoke([
-            SystemMessage(content="You score passage relevance. Return only a JSON array."),
-            HumanMessage(content=RERANK_PROMPT.format(query=query, passages=passages_text)),
-        ])
+        response = await llm.ainvoke(
+            [
+                SystemMessage(content="You score passage relevance. Return only a JSON array."),
+                HumanMessage(content=RERANK_PROMPT.format(query=query, passages=passages_text)),
+            ]
+        )
 
         raw = response.content if isinstance(response.content, str) else str(response.content)
         raw = raw.strip()
@@ -64,7 +64,11 @@ async def rerank_chunks(
             for chunk, score in zip(chunks, scores):
                 chunk.rerank_score = float(score)
         else:
-            logger.warning("rerank_score_mismatch", expected=len(chunks), got=len(scores) if isinstance(scores, list) else 0)
+            logger.warning(
+                "rerank_score_mismatch",
+                expected=len(chunks),
+                got=len(scores) if isinstance(scores, list) else 0,
+            )
             for chunk in chunks:
                 chunk.rerank_score = chunk.combined_score
 

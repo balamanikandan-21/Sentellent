@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,10 +20,7 @@ class TickerRepository:
     async def search(self, query: str, *, limit: int = 20) -> Sequence[Ticker]:
         stmt = (
             select(Ticker)
-            .where(
-                Ticker.symbol.ilike(f"%{query}%")
-                | Ticker.company_name.ilike(f"%{query}%")
-            )
+            .where(Ticker.symbol.ilike(f"%{query}%") | Ticker.company_name.ilike(f"%{query}%"))
             .limit(limit)
         )
         result = await self.session.execute(stmt)

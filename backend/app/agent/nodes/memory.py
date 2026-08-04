@@ -15,19 +15,12 @@ async def retrieve_memory(state: AgentState, db: AsyncSession) -> AgentState:
     settings = get_settings()
     chat_repo = ChatRepository(db)
 
-    messages = await chat_repo.get_messages(
-        state["session_id"], limit=settings.CHAT_HISTORY_LIMIT
-    )
+    messages = await chat_repo.get_messages(state["session_id"], limit=settings.CHAT_HISTORY_LIMIT)
 
-    history = [
-        {"role": msg.role, "content": msg.content}
-        for msg in messages
-    ]
+    history = [{"role": msg.role, "content": msg.content} for msg in messages]
 
     memory_store = MemoryStore(db)
-    profile = await memory_store.retrieve_profile(
-        state["user_id"], query=state.get("query")
-    )
+    profile = await memory_store.retrieve_profile(state["user_id"], query=state.get("query"))
 
     logger.info(
         "memory_retrieved",

@@ -5,16 +5,17 @@ Revises: 0001
 Create Date: 2026-08-01
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "0002"
-down_revision: Union[str, None] = "0001"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "0001"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -152,9 +153,7 @@ def upgrade() -> None:
         ),
     )
     op.create_index("ix_fundamentals_chunks_ticker", "fundamentals_chunks", ["ticker_symbol"])
-    op.execute(
-        "ALTER TABLE fundamentals_chunks ADD COLUMN embedding vector(1536)"
-    )
+    op.execute("ALTER TABLE fundamentals_chunks ADD COLUMN embedding vector(1536)")
     op.execute(
         "CREATE INDEX ix_fundamentals_chunks_embedding "
         "ON fundamentals_chunks USING hnsw (embedding vector_cosine_ops)"
@@ -236,9 +235,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
         ),
     )
-    op.execute(
-        "ALTER TABLE investor_personas ADD COLUMN embedding vector(1536)"
-    )
+    op.execute("ALTER TABLE investor_personas ADD COLUMN embedding vector(1536)")
     op.execute(
         "CREATE INDEX ix_investor_personas_embedding "
         "ON investor_personas USING hnsw (embedding vector_cosine_ops)"
@@ -261,9 +258,7 @@ def upgrade() -> None:
         sa.Column("positive_count", sa.Integer, nullable=False, server_default="0"),
         sa.Column("negative_count", sa.Integer, nullable=False, server_default="0"),
         sa.Column("neutral_count", sa.Integer, nullable=False, server_default="0"),
-        sa.UniqueConstraint(
-            "ticker_symbol", "period", "date", name="uq_ticker_sentiment_period"
-        ),
+        sa.UniqueConstraint("ticker_symbol", "period", "date", name="uq_ticker_sentiment_period"),
     )
 
     # --- ingestion_jobs ---

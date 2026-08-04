@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
-from app.auth.router import router as auth_router
-from app.api.v1.tickers import router as tickers_router
-from app.api.v1.ingestion import router as ingestion_router
 from app.api.v1.chat import router as chat_router
+from app.api.v1.ingestion import router as ingestion_router
+from app.api.v1.tickers import router as tickers_router
+from app.auth.router import router as auth_router
 
 api_v1_router = APIRouter()
 
