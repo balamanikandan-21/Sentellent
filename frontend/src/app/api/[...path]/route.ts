@@ -14,7 +14,15 @@ import { type NextRequest } from "next/server"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const BACKEND_URL = process.env.API_URL || "http://localhost:8000"
+// A URL can never contain whitespace, so keep only the first token and drop a
+// trailing slash. Guards against stray newlines or pasted text in the env var,
+// which otherwise surface as a confusing ENOTFOUND on a mangled hostname.
+function normalizeBackendUrl(raw: string | undefined): string {
+  const first = (raw ?? "").trim().split(/\s/)[0]
+  return (first || "http://localhost:8000").replace(/\/+$/, "")
+}
+
+const BACKEND_URL = normalizeBackendUrl(process.env.API_URL)
 
 // Hop-by-hop headers must not be forwarded.
 const STRIPPED_REQUEST_HEADERS = new Set([
@@ -58,20 +66,9 @@ async function proxy(request: NextRequest): Promise<Response> {
       cache: "no-store",
     } as RequestInit)
   } catch (error) {
+    console.error("api_proxy_failed", { target, error })
     return Response.json(
-      {
-        detail: "Upstream API is unreachable.",
-        // Temporary diagnostics — the backend host is public, no secrets here.
-        debug: {
-          target,
-          apiUrlConfigured: Boolean(process.env.API_URL),
-          error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
-          cause:
-            error instanceof Error && error.cause
-              ? String((error.cause as { message?: string })?.message ?? error.cause)
-              : null,
-        },
-      },
+      { detail: "Upstream API is unreachable." },
       { status: 502 },
     )
   }
