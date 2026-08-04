@@ -1,7 +1,9 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // "standalone" produces the self-contained server.js the Docker image runs.
+  // Vercel builds its own output format, so skip it there.
+  output: process.env.VERCEL ? undefined : "standalone",
   images: {
     remotePatterns: [
       {
