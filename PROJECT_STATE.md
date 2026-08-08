@@ -9,8 +9,14 @@
 **Challenge PDF:** `C:\Users\Admin\Downloads\Sentellent_Hiring_Challenge.pdf` (fully parsed; all requirements mapped — see README "Challenge Compliance" table)
 
 ## Current Phase
-**Phase:** DEPLOYED TO AWS AND LIVE. Code complete, audited, all bugs fixed.
-**Next:** One blocker — HTTPS for Google OAuth (see "CURRENT BLOCKER" below), then submit.
+**Phase:** AWS TORN DOWN (2026-08-04). Code complete, audited, all bugs fixed.
+The app WAS fully deployed and working on AWS; infrastructure was destroyed
+afterwards to stop credit burn.
+
+> **The live URL no longer works.** https://sentellent.vercel.app still serves the
+> frontend, but every `/api/*` call 502s because the AWS ALB behind it is gone.
+> To bring it back, see "REDEPLOYING FROM SCRATCH" below — it is a single
+> `terraform apply` plus an image push.
 
 ## LIVE DEPLOYMENT (as of 2026-08-04)
 
@@ -69,10 +75,30 @@ Then add `https://<cloudfront-domain>/api/v1/auth/google/callback` in GCP Consol
 
 Option B keeps every graded component (ECS, RDS, Terraform, CI/CD, the agent) on AWS.
 
-## COST WARNING
-AWS is running now at roughly **$2/day** (~$60/mo): RDS db.t3.micro, 2 Fargate tasks, ALB,
-Secrets Manager. AWS credits ($20 earned of $100 available) offset this.
-**Tear down when evaluation finishes:** `cd infra && terraform destroy`
+## TEARDOWN (done 2026-08-04)
+
+`terraform destroy` removed **57 resources**. Verified zero remaining: RDS 0,
+ECS clusters 0, load balancers 0, ECR repos 0, secrets 0, NAT gateways 0.
+(A handful of deregistered ECS task-definition ARNs still appear in the
+resource-tagging API — those are inactive tombstones and cost nothing.)
+
+Still present, deliberately, and effectively free:
+- `s3://sentellent-terraform-state-145908329001` + DynamoDB `sentellent-terraform-locks`
+  (the state backend; `prevent_destroy = true` on the bucket)
+
+## REDEPLOYING FROM SCRATCH
+
+```bash
+cd infra && terraform init && terraform apply
+# repopulate the three API-key secrets (see docs/DEPLOYMENT.md section 4)
+# build + push both images to ECR, then:
+#   aws ecs update-service --cluster sentellent-production-cluster #     --service sentellent-production-backend --force-new-deployment
+# run migrations as a one-off task, then point Vercel's API_URL at the new ALB:
+cd infra && terraform apply -var="public_url_override=https://sentellent.vercel.app"
+```
+
+Note the ALB DNS name changes on recreate, so Vercel's `API_URL` env var and the
+GCP redirect URI both need updating.
 
 ## What is built (all verified working)
 
